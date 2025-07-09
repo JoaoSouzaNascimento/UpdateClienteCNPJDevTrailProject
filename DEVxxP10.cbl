@@ -49,21 +49,7 @@
            05 WS-REG-DESP          PIC 9(5) VALUE ZEROS.
        01 WS-FIM-ARQUIVO           PIC X VALUE 'N'.
       * 
-      * COPY DEVBKCLI.
-      * Descomente o copy acima e comente o abaixo para usar o copybook
-       01 PRF-DADOSCLI.
-            10 PRF-OPERACAO            PIC X(001)    VALUE SPACE.
-               88 NOVO-CLIENTE                       VALUE 'N'.
-               88 ATUALIZACAO                        VALUE 'A'.
-               88 INATIVACAO                         VALUE 'I'.
-            10 PRF-CODIGOCLI           PIC 9(005)    VALUE ZEROS.
-            10 PRF-RAZAOSOCIAL         PIC X(040)    VALUE SPACE.
-            10 PRF-CNPJ                PIC X(009)    VALUE SPACE.
-            10 PRF-FILIAL              PIC X(004)    VALUE SPACE.
-            10 PRF-CONTROLE            PIC 9(002)    VALUE ZEROS.
-            10 PRF-VLRULTCOMPRA COMP-3 PIC 9(011)V99 VALUE ZEROS.
-            10 PRF-DATAOPER            PIC 9(008)    VALUE ZEROS.
-            10 PRF-RESERVA             PIC X(004)    VALUE SPACE.
+       COPY DEVBKCLI.
       * 
        01 WRK-DEVCDATA.
            05 WRK-DATADEV          PIC 9(8) VALUE ZEROS.
@@ -197,11 +183,13 @@
            IF SQLCODE NOT = 0
                EXEC SQL
                    INSERT INTO ALUNO06.CLIENTPJ (
-                       CODIGO_CLI, RAZSOCIAL_CLI, NUMECNPJ_CLI, FILIALCNPJ_CLI,
-                       CTLCNPJ_CLI, VRULTCOMPRA_CLI, DTULTCOMPRA_CLI, DTATLZDADOS_CLI
+                       CODIGO_CLI, RAZSOCIAL_CLI, NUMECNPJ_CLI, 
+                       FILIALCNPJ_CLI, CTLCNPJ_CLI, VRULTCOMPRA_CLI, 
+                       DTULTCOMPRA_CLI, DTATLZDADOS_CLI
                    ) VALUES (
-                       :WS-CODIGOCLI-HOST, :WS-RAZAOSOCIAL-HOST, :WS-CNPJ-HOST,
-                       :WS-FILIAL-HOST, :WS-CONTROLE-HOST, :WS-VLRULTCOMPRA-HOST,
+                       :WS-CODIGOCLI-HOST, :WS-RAZAOSOCIAL-HOST, 
+                       :WS-CNPJ-HOST, :WS-FILIAL-HOST, 
+                       :WS-CONTROLE-HOST, :WS-VLRULTCOMPRA-HOST,
                        :WS-DATAOPER-HOST, :WS-DATA-PROCESSAMENTO-HOST
                    )
                END-EXEC
@@ -236,12 +224,17 @@
                PERFORM 8000-REG-INVALIDO
            END-IF
 
-           IF PRF-CNPJ NOT = SPACES OR PRF-FILIAL NOT = SPACES OR PRF-CONTROLE NOT = 0 OR PRF-VLRULTCOMPRA NOT = 0
+           IF (PRF-CNPJ NOT = SPACES) OR
+               (PRF-FILIAL NOT = SPACES) OR 
+               (PRF-CONTROLE NOT = 0) OR 
+               (PRF-VLRULTCOMPRA NOT = 0)
+
                MOVE PRF-CNPJ TO WRK-CNPJ
                MOVE PRF-FILIAL TO WRK-FILIAL
                MOVE PRF-CONTROLE TO WRK-CONTROLE
                CALL WRK-PROG-CNPJ USING WRK-AREACNPJ
-               IF WRK-CODRCNPJ NOT = 'OK'
+               
+               IF (WRK-CODRCNPJ NOT = 'OK')
                    MOVE 'ERRO CNPJ' TO LD2-ERRO
                    PERFORM 8000-REG-INVALIDO
                END-IF
@@ -341,7 +334,8 @@
        7000-IMPRIME-OK.
            STRING 'OPERACAO: ' PRF-OPERACAO DELIMITED BY SIZE
                   '  RESULTADO: OPERACAO REALIZADA'
-             INTO REG-RLINCONS
+                  DELIMITED BY SIZE
+                  INTO REG-RLINCONS
            END-STRING
            WRITE REG-RLINCONS.
 
@@ -349,7 +343,8 @@
            ADD 1 TO WS-REG-DESP
            STRING 'OPERACAO: ' PRF-OPERACAO DELIMITED BY SIZE
                   '  RESULTADO: REG INCONSISTENTE'
-             INTO REG-RLINCONS
+                  DELIMITED BY SIZE
+                  INTO REG-RLINCONS
            END-STRING
            WRITE REG-RLINCONS
            STRING '  >> MOTIVO: ' LD2-ERRO DELIMITED BY SIZE
