@@ -30,7 +30,10 @@
        01 REG-RLINCONS             PIC X(132).
       * 
        WORKING-STORAGE SECTION.
-      * 
+      *
+       COPY DEVRELTO.
+       COPY DEVBKCLI.
+      *
        01 WS-CLIENTE-HOST.
            05 WS-CODIGOCLI-HOST         PIC 9(9).
            05 WS-RAZAOSOCIAL-HOST       PIC X(60).
@@ -49,9 +52,6 @@
            05 WS-REG-DESP          PIC 9(5) VALUE ZEROS.
        01 WS-FIM-ARQUIVO           PIC X VALUE 'N'.
       * 
-       COPY DEVRELTO.
-       COPY DEVBKCLI.
-      * 
        01 WRK-DEVCDATA.
            05 WRK-DATADEV          PIC 9(8) VALUE ZEROS.
            05 WRK-CODRDEV          PIC X(2) VALUE SPACES.
@@ -61,12 +61,14 @@
                10 WRK-CNPJ         PIC X(8).
                10 WRK-FILIAL       PIC X(4).
                10 WRK-CONTROLE     PIC 9(2).
+           05 WRK-CODRCNPJ         PIC X(002).
       * 
        01 WRK-DATA-PROCESSAMENTO   PIC 9(8).
        01 WRK-HORA-PROCESSAMENTO   PIC 9(6).
        01 WRK-PROG-CNPJ            PIC X(8) VALUE 'DEV06CPJ'.
        01 WRK-PROG-DAT             PIC X(8) VALUE 'DEVCDATA'.
        01 WS-PAGINA                PIC 9(03) VALUE ZERO.
+       01 LD2-ERRO                 PIC X(18) VALUE SPACES.
       * 
        PROCEDURE DIVISION.
       * 
@@ -79,7 +81,7 @@
            WRITE REG-RLINCONS FROM CABEC1.
            WRITE REG-RLINCONS FROM CABEC2.
 
-           OPEN IN	PUT ARQ-DADOSCLI
+           OPEN INPUT ARQ-DADOSCLI
                 OUTPUT ARQ-RLINCONS.
       * 
            IF WS-FS-DADOSCLI NOT = '00'
@@ -372,7 +374,7 @@
            MOVE PRF-RAZAOSOCIAL TO LD3-RAZSOCIAL
            WRITE REG-RLINCONS FROM LINDET3.
       
-      1400-CALL-DEVCDATA.
+       1400-CALL-DEVCDATA.
            CALL WRK-PROG-DAT USING WRK-DEVCDATA.
 
        9999-FIM.
