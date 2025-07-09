@@ -2,6 +2,9 @@
        PROGRAM-ID. DEV06P10.
       *
       *
+       EXEC SQL INCLUDE CLIENTPJ END-EXEC.
+      *
+      *
        ENVIRONMENT DIVISION.
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
