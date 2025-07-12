@@ -1,16 +1,13 @@
        IDENTIFICATION DIVISION.
-       PROGRAM-ID. DEV06P10.
-      *
-      *
-       EXEC SQL INCLUDE CLIENTPJ END-EXEC.
+       PROGRAM-ID. DEVXXP10.
       *
       *
        ENVIRONMENT DIVISION.
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
-           SELECT ARQ-DADOSCLI ASSIGN TO 'DADOSCLI'
+           SELECT DADOSCLI ASSIGN TO DADOSCLI
                FILE STATUS IS WS-FS-DADOSCLI.
-           SELECT ARQ-RLINCONS ASSIGN TO 'RLINCONS'
+           SELECT RLINCONS ASSIGN TO RLINCONS
                FILE STATUS IS WS-FS-RLINCONS.
       *
       *
@@ -18,39 +15,32 @@
       *
        FILE SECTION.
       *
-       FD ARQ-DADOSCLI
+       FD DADOSCLI
            RECORDING MODE F
            RECORD CONTAINS 80 CHARACTERS
            BLOCK CONTAINS 0 RECORDS.
        01 REG-DADOSCLI             PIC X(80).
       * 
-       FD ARQ-RLINCONS
+       FD RLINCONS
            RECORDING MODE F
            RECORD CONTAINS 132 CHARACTERS. 
        01 REG-RLINCONS             PIC X(132).
       * 
        WORKING-STORAGE SECTION.
       *
+           EXEC SQL INCLUDE SQLCA END-EXEC.
+           EXEC SQL INCLUDE CLIENTPJ END-EXEC.
+      *
        COPY DEVRELTO.
        COPY DEVBKCLI.
       *
-       01 WS-CLIENTE-HOST.
-           05 WS-CODIGOCLI-HOST         PIC 9(9).
-           05 WS-RAZAOSOCIAL-HOST       PIC X(60).
-           05 WS-CNPJ-HOST              PIC X(8).
-           05 WS-FILIAL-HOST            PIC X(4).
-           05 WS-CONTROLE-HOST          PIC 9(2).
-           05 WS-VLRULTCOMPRA-HOST      PIC S9(9)V99.
-           05 WS-DATAOPER-HOST          PIC 9(8).
-           05 WS-DATA-PROCESSAMENTO-HOST PIC 9(8).
-      *
-       01 WS-FS-DADOSCLI           PIC XX VALUE SPACES.
-       01 WS-FS-RLINCONS           PIC XX VALUE SPACES.
+       01 WS-FS-DADOSCLI           PIC X(002) VALUE SPACES.
+       01 WS-FS-RLINCONS           PIC X(002) VALUE SPACES.
        01 WS-CONTROLE.
-           05 WS-REG-LIDOS         PIC 9(5) VALUE ZEROS.
-           05 WS-REG-ATUAL         PIC 9(5) VALUE ZEROS.
-           05 WS-REG-DESP          PIC 9(5) VALUE ZEROS.
-       01 WS-FIM-ARQUIVO           PIC X VALUE 'N'.
+           05 WS-REG-LIDOS         PIC 9(005) VALUE ZEROS.
+           05 WS-REG-ATUAL         PIC 9(005) VALUE ZEROS.
+           05 WS-REG-DESP          PIC 9(005) VALUE ZEROS.
+       01 WS-FIM-ARQUIVO           PIC X(001) VALUE 'N'.
       * 
        01 WRK-DEVCDATA.
            05 WRK-DATADEV          PIC 9(8) VALUE ZEROS.
@@ -65,63 +55,46 @@
       * 
        01 WRK-DATA-PROCESSAMENTO   PIC 9(8).
        01 WRK-HORA-PROCESSAMENTO   PIC 9(6).
-       01 WRK-PROG-CNPJ            PIC X(8) VALUE 'DEV06CPJ'.
+       01 WRK-PROG-CNPJ            PIC X(8) VALUE 'DEVXXCPJ'.
        01 WRK-PROG-DAT             PIC X(8) VALUE 'DEVCDATA'.
        01 WS-PAGINA                PIC 9(03) VALUE ZERO.
        01 LD2-ERRO                 PIC X(18) VALUE SPACES.
+      *
       * 
        PROCEDURE DIVISION.
       * 
        0000-INICIO.
-           DISPLAY 'DEV06P10   INICIO DO PROCESSAMENTO'.
+           DISPLAY 'DEVXXP10   INICIO DO PROCESSAMENTO'.
            ACCEPT WRK-DATA-PROCESSAMENTO FROM DATE YYYYMMDD.
            ACCEPT WRK-HORA-PROCESSAMENTO FROM TIME.
+
+           OPEN INPUT DADOSCLI
+                OUTPUT RLINCONS.
+      * 
+           PERFORM 1500-VALIDA-ABERTURA-ARQUIVOS
+      *
            ADD 1 TO WS-PAGINA
            MOVE WS-PAGINA TO CB1-PAG
            WRITE REG-RLINCONS FROM CABEC1.
            WRITE REG-RLINCONS FROM CABEC2.
-
-           OPEN INPUT ARQ-DADOSCLI
-                OUTPUT ARQ-RLINCONS.
-      * 
-           IF WS-FS-DADOSCLI NOT = '00'
-               DISPLAY 'DEV06P10   ERRO ABRIR DADOSCLI'
-               PERFORM 9999-FIM
-               STOP RUN
-           END-IF
-      * 
-           IF WS-FS-RLINCONS NOT = '00'
-               DISPLAY 'DEV06P10   ERRO ABRIR RLINCONS'
-               PERFORM 9999-FIM
-               STOP RUN
-           END-IF
-      * 
-           READ ARQ-DADOSCLI INTO PRF-DADOSCLI
-               AT END MOVE 'S' TO WS-FIM-ARQUIVO
-           END-READ
-      * 
-           IF WS-FIM-ARQUIVO = 'S'
-               DISPLAY 'DEV06P10   ARQUIVO DADOSCLI VAZIO'
-               MOVE 4 TO RETURN-CODE
-               PERFORM 9999-FIM
-               STOP RUN
-           END-IF
+      *      
+           PERFORM 1600-VALIDA-ARQUIVO-VAZIO
       * 
            PERFORM UNTIL WS-FIM-ARQUIVO = 'S'
                ADD 1 TO WS-REG-LIDOS
                PERFORM 1000-TRATA-REGISTRO
-               READ ARQ-DADOSCLI INTO PRF-DADOSCLI
+               READ DADOSCLI INTO PRF-DADOSCLI
                    AT END MOVE 'S' TO WS-FIM-ARQUIVO
                END-READ
            END-PERFORM
       * 
-           DISPLAY 'DEV06P10-TOTAL DE REGISTROS LIDOS......: ' 
+           DISPLAY 'DEVXXP10-TOTAL DE REGISTROS LIDOS......: ' 
                WS-REG-LIDOS
-           DISPLAY 'DEV06P10-TOTAL DE REGISTROS ATUALIZADOS: ' 
+           DISPLAY 'DEVXXP10-TOTAL DE REGISTROS ATUALIZADOS: ' 
                WS-REG-ATUAL
-           DISPLAY 'DEV06P10-TOTAL DE REGISTROS DESPREZADOS: '
+           DISPLAY 'DEVXXP10-TOTAL DE REGISTROS DESPREZADOS: '
                WS-REG-DESP
-           DISPLAY 'DEV06P10-PROCESSAMENTO ENCERRADO'
+           DISPLAY 'DEVXXP10-PROCESSAMENTO ENCERRADO'
            PERFORM 9999-FIM.
       *     
        1000-TRATA-REGISTRO.
@@ -174,32 +147,33 @@
            END-IF
 
       *--- MOVENDO DADOS PARA VARIAVEIS HOST ---
-           MOVE PRF-CODIGOCLI       TO WS-CODIGOCLI-HOST
-           MOVE PRF-RAZAOSOCIAL     TO WS-RAZAOSOCIAL-HOST
-           MOVE PRF-CNPJ            TO WS-CNPJ-HOST
-           MOVE PRF-FILIAL          TO WS-FILIAL-HOST
-           MOVE PRF-CONTROLE        TO WS-CONTROLE-HOST
-           MOVE PRF-VLRULTCOMPRA    TO WS-VLRULTCOMPRA-HOST
-           MOVE PRF-DATAOPER        TO WS-DATAOPER-HOST
-           MOVE WRK-DATA-PROCESSAMENTO TO WS-DATA-PROCESSAMENTO-HOST
+           MOVE PRF-CODIGOCLI       TO CODIGO-CLI
+           MOVE PRF-RAZAOSOCIAL     TO RAZSOCIAL-CLI
+           MOVE PRF-CNPJ            TO NUMECNPJ-CLI
+           MOVE PRF-FILIAL          TO FILIALCNPJ-CLI
+           MOVE PRF-CONTROLE        TO CTLCNPJ-CLI
+           MOVE PRF-VLRULTCOMPRA    TO VRULTCOMPRA-CLI
+           MOVE PRF-DATAOPER        TO DTULTCOMPRA-CLI
+           MOVE WRK-DATA-PROCESSAMENTO TO DTATLZDADOS-CLI
 
            EXEC SQL
-               SELECT CODIGO_CLI INTO :WS-CODIGOCLI-HOST
-                 FROM ALUNO06.CLIENTPJ
-                WHERE CODIGO_CLI = :WS-CODIGOCLI-HOST
+               SELECT CODIGO_CLI INTO :CODIGO-CLI
+                 FROM ALUNOXX.CLIENTPJ
+                WHERE CODIGO_CLI = :CODIGO-CLI
            END-EXEC
 
            IF SQLCODE NOT = 0
                EXEC SQL
-                   INSERT INTO ALUNO06.CLIENTPJ (
-                       CODIGO_CLI, RAZSOCIAL_CLI, NUMECNPJ_CLI, 
-                       FILIALCNPJ_CLI, CTLCNPJ_CLI, VRULTCOMPRA_CLI, 
+                   INSERT INTO ALUNOXX.CLIENTPJ (
+                       CODIGO_CLI, RAZSOCIAL_CLI, 
+                       NUMECNPJ_CLI, FILIALCNPJ_CLI, 
+                       CTLCNPJ_CLI, VRULTCOMPRA_CLI, 
                        DTULTCOMPRA_CLI, DTATLZDADOS_CLI
                    ) VALUES (
-                       :WS-CODIGOCLI-HOST, :WS-RAZAOSOCIAL-HOST, 
-                       :WS-CNPJ-HOST, :WS-FILIAL-HOST, 
-                       :WS-CONTROLE-HOST, :WS-VLRULTCOMPRA-HOST,
-                       :WS-DATAOPER-HOST, :WS-DATA-PROCESSAMENTO-HOST
+                       :CODIGO-CLI, :RAZSOCIAL-CLI, 
+                       :NUMECNPJ-CLI, :FILIALCNPJ-CLI, 
+                       :CTLCNPJ-CLI, :VRULTCOMPRA-CLI,
+                       :DTULTCOMPRA-CLI, :DTATLZDADOS-CLI
                    )
                END-EXEC
 
@@ -222,9 +196,9 @@
            END-IF
 
            EXEC SQL
-               SELECT CODIGO_CLI INTO :WS-CODIGOCLI-HOST
-                 FROM ALUNO06.CLIENTPJ
-                WHERE CODIGO_CLI = :PRF-CODIGOCLI
+               SELECT CODIGO_CLI INTO :CODIGO-CLI
+                 FROM ALUNOXX.CLIENTPJ
+                WHERE CODIGO_CLI = :CODIGO-CLI
                   AND DTINATIVA_CLI IS NULL
            END-EXEC
 
@@ -262,25 +236,25 @@
                END-IF
            END-IF
 
-           MOVE PRF-CODIGOCLI       TO WS-CODIGOCLI-HOST
-           MOVE PRF-RAZAOSOCIAL     TO WS-RAZAOSOCIAL-HOST
-           MOVE PRF-CNPJ            TO WS-CNPJ-HOST
-           MOVE PRF-FILIAL          TO WS-FILIAL-HOST
-           MOVE PRF-CONTROLE        TO WS-CONTROLE-HOST
-           MOVE PRF-VLRULTCOMPRA    TO WS-VLRULTCOMPRA-HOST
-           MOVE PRF-DATAOPER        TO WS-DATAOPER-HOST
-           MOVE WRK-DATA-PROCESSAMENTO TO WS-DATA-PROCESSAMENTO-HOST
+           MOVE PRF-CODIGOCLI       TO CODIGO-CLI
+           MOVE PRF-RAZAOSOCIAL     TO RAZSOCIAL-CLI
+           MOVE PRF-CNPJ            TO NUMECNPJ-CLI
+           MOVE PRF-FILIAL          TO FILIALCNPJ-CLI
+           MOVE PRF-CONTROLE        TO CTLCNPJ-CLI
+           MOVE PRF-VLRULTCOMPRA    TO VRULTCOMPRA-CLI
+           MOVE PRF-DATAOPER        TO DTULTCOMPRA-CLI
+           MOVE WRK-DATA-PROCESSAMENTO TO DTATLZDADOS-CLI
 
            EXEC SQL
-               UPDATE ALUNO06.CLIENTPJ SET
-                 RAZSOCIAL_CLI    = :WS-RAZAOSOCIAL-HOST,
-                 NUMECNPJ_CLI     = :WS-CNPJ-HOST,
-                 FILIALCNPJ_CLI   = :WS-FILIAL-HOST,
-                 CTLCNPJ_CLI      = :WS-CONTROLE-HOST,
-                 VRULTCOMPRA_CLI  = :WS-VLRULTCOMPRA-HOST,
-                 DTULTCOMPRA_CLI  = :WS-DATAOPER-HOST,
-                 DTATLZDADOS_CLI  = :WS-DATA-PROCESSAMENTO-HOST
-               WHERE CODIGO_CLI = :WS-CODIGOCLI-HOST
+               UPDATE ALUNOXX.CLIENTPJ SET
+                 RAZSOCIAL_CLI    = :RAZSOCIAL-CLI,
+                 NUMECNPJ_CLI     = :NUMECNPJ-CLI,
+                 FILIALCNPJ_CLI   = :FILIALCNPJ-CLI,
+                 CTLCNPJ_CLI      = :CTLCNPJ-CLI,
+                 VRULTCOMPRA_CLI  = :VRULTCOMPRA-CLI,
+                 DTULTCOMPRA_CLI  = :DTULTCOMPRA-CLI,
+                 DTATLZDADOS_CLI  = :DTATLZDADOS-CLI
+               WHERE CODIGO_CLI = :CODIGO-CLI
            END-EXEC
 
            IF SQLCODE NOT = 0
@@ -298,9 +272,9 @@
            END-IF
 
            EXEC SQL
-               SELECT CODIGO_CLI INTO :WS-CODIGOCLI-HOST
-                 FROM ALUNO06.CLIENTPJ
-                WHERE CODIGO_CLI = :PRF-CODIGOCLI
+               SELECT CODIGO_CLI INTO :CODIGO-CLI
+                 FROM ALUNOXX.CLIENTPJ
+                WHERE CODIGO_CLI = :CODIGO-CLI
                   AND DTINATIVA_CLI IS NULL
            END-EXEC
 
@@ -321,15 +295,15 @@
               PERFORM 8000-REG-INVALIDO
            END-IF
 
-           MOVE PRF-CODIGOCLI       TO WS-CODIGOCLI-HOST
-           MOVE PRF-DATAOPER        TO WS-DATAOPER-HOST
-           MOVE WRK-DATA-PROCESSAMENTO TO WS-DATA-PROCESSAMENTO-HOST
+           MOVE PRF-CODIGOCLI       TO CODIGO-CLI
+           MOVE PRF-DATAOPER        TO DTULTCOMPRA-CLI
+           MOVE WRK-DATA-PROCESSAMENTO TO DTATLZDADOS-CLI
 
            EXEC SQL
-               UPDATE ALUNO06.CLIENTPJ SET
-                 DTINATIVA_CLI    = :WS-DATAOPER-HOST,
-                 DTATLZDADOS_CLI  = :WS-DATA-PROCESSAMENTO-HOST
-               WHERE CODIGO_CLI = :WS-CODIGOCLI-HOST
+               UPDATE ALUNOXX.CLIENTPJ SET
+                 DTINATIVA_CLI    = :DTULTCOMPRA-CLI,
+                 DTATLZDADOS_CLI  = :DTATLZDADOS-CLI
+               WHERE CODIGO_CLI = :CODIGO-CLI
            END-EXEC
 
            IF SQLCODE NOT = 0
@@ -377,6 +351,28 @@
        1400-CALL-DEVCDATA.
            CALL WRK-PROG-DAT USING WRK-DEVCDATA.
 
+       1500-VALIDA-ABERTURA-ARQUIVOS.
+           IF WS-FS-DADOSCLI NOT = '00'
+               DISPLAY 'DEVXXP10   ERRO ABRIR DADOSCLI'
+               PERFORM 9999-FIM
+           END-IF
+
+           IF WS-FS-RLINCONS NOT = '00'
+               DISPLAY 'DEVXXP10   ERRO ABRIR RLINCONS'
+               PERFORM 9999-FIM
+           END-IF.
+
+       1600-VALIDA-ARQUIVO-VAZIO.
+           READ DADOSCLI INTO PRF-DADOSCLI
+               AT END MOVE 'S' TO WS-FIM-ARQUIVO
+           END-READ
+
+           IF WS-FIM-ARQUIVO = 'S'
+               DISPLAY 'DEVXXP10   ARQUIVO DADOSCLI VAZIO'
+               MOVE 4 TO RETURN-CODE
+               PERFORM 9999-FIM
+           END-IF.
+
        9999-FIM.
-           CLOSE ARQ-DADOSCLI ARQ-RLINCONS
+           CLOSE DADOSCLI RLINCONS
            GOBACK.
