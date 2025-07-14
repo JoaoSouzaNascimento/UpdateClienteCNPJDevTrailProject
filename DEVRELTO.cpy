@@ -2,13 +2,14 @@
       *----------------------------------------------------------------*
       * DEFINICOES DO RELATORIO - RELATO                               *
       *----------------------------------------------------------------*
-      *
+      * 200040812
        01  CABEC1.
            10 FILLER                   PIC  X(005) VALUE SPACES.
            10 CB1-DATA                 PIC  X(010) VALUE SPACES.
            10 FILLER                   PIC  X(003) VALUE SPACES.
            10 FILLER                   PIC  X(046) VALUE
            'EMPRESA S/A ATUALIZACOES NA TABELA CLIENTES PJ'.
+           10 FILLER                   PIC  X(005) VALUE SPACES.
            10 CB1-PAG                  PIC  9(002) VALUE ZEROS.
            10 FILLER                   PIC  X(005) VALUE SPACES.
       *
@@ -56,10 +57,15 @@
       *
        01  LINDET4.
            10 FILLER                   PIC  X(005) VALUE SPACES.
-           10 LD4-CNPJ                 PIC  X(016) VALUE SPACES.
-           10 FILLER                   PIC  X(004) VALUE SPACES.
+           10 LD4-FORMT-CNPJ.
+              15 LD4-CNPJ              PIC  X(008) VALUE SPACES.
+              15 FILLER                PIC  X(001) VALUE '/'.
+              15 LD4-FILIAL            PIC  X(004) VALUE SPACES.
+              15 FILLER                PIC  X(001) VALUE '-'.
+              15 LD4-CONTROLE          PIC  X(002) VALUE SPACES.
+           10 FILLER                   PIC  X(003) VALUE SPACES.
            10 LD4-VRULTCOMPRA          PIC  ZZ.ZZZ.ZZZ.ZZ9,99 VALUE 
               ZEROS.
            10 FILLER                   PIC  X(007) VALUE SPACES.
            10 LD4-DATA                 PIC  99/99/9999 VALUE ZEROS.
-      *
+      * thank u sheldon <3

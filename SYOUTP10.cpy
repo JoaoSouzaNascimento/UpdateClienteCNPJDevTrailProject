@@ -61,7 +61,7 @@
               10 SYS-OPERACAO-ARQ PIC X(008).
            05 SYS-ERROARQ-LINHA-4.
               10 FILLER           PIC X(022) 
-                 VALUE 'DEVXXP10 - SQLCODE..: '.
+                 VALUE 'DEVXXP10 - COD. ERRO: '.
               10 SYS-COD-ERRO     PIC X(002).
            05 SYS-ERROARQ-LINHA-5.
               10 FILLER           PIC X(034) 

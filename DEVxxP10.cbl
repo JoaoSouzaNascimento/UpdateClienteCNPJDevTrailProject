@@ -1,14 +1,19 @@
        IDENTIFICATION DIVISION.
-       PROGRAM-ID. DEVXXP10.
+       PROGRAM-ID. DEV08P10.
       *
       *
        ENVIRONMENT DIVISION.
+      *
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+      *      
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
            SELECT DADOSCLI ASSIGN TO DADOSCLI
-               FILE STATUS IS WS-FS-DADOSCLI.
+               FILE STATUS IS WRK-FS-DADOSCLI.
            SELECT RLINCONS ASSIGN TO RLINCONS
-               FILE STATUS IS WS-FS-RLINCONS.
+               FILE STATUS IS WRK-FS-RLINCONS.
       *
       *
        DATA DIVISION.
@@ -35,14 +40,14 @@
        COPY DEVBKCLI.
        COPY SYOUTP10.
       *
-       01 WS-FS-DADOSCLI           PIC X(002) VALUE SPACES.
-       01 WS-FS-RLINCONS           PIC X(002) VALUE SPACES.
+       01 WRK-FS-DADOSCLI           PIC X(002) VALUE SPACES.
+       01 WRK-FS-RLINCONS           PIC X(002) VALUE SPACES.
       * 
-       01 WS-CONTROLE.
-           05 WS-REG-LIDOS         PIC 9(005) VALUE ZEROS.
-           05 WS-REG-ATUAL         PIC 9(005) VALUE ZEROS.
-           05 WS-REG-DESP          PIC 9(005) VALUE ZEROS.
-       01 WS-FIM-ARQUIVO           PIC X(001) VALUE 'N'.
+       01 WRK-REG-CONTROLE.
+           05 WRK-REG-LIDOS         PIC 9(005) VALUE ZEROS.
+           05 WRK-REG-ATUAL         PIC 9(005) VALUE ZEROS.
+           05 WRK-REG-DESP          PIC 9(005) VALUE ZEROS.
+       01 WRK-FIM-ARQUIVO           PIC X(001) VALUE 'N'.
       * 
        01 WRK-DEVCDATA.
            05 WRK-DATADEV          PIC 9(8) VALUE ZEROS.
@@ -67,83 +72,103 @@
            05 WRK-MIN-PROC         PIC 9(2).
            05 WRK-SEG-PROC         PIC 9(2).
       *
-       01 WRK-PROG-CNPJ            PIC X(8) VALUE 'DEVXXCPJ'.
+       01 WRK-PROG-CNPJ            PIC X(8) VALUE 'DEV08CPJ'.
        01 WRK-PROG-DAT             PIC X(8) VALUE 'DEVCDATA'.
       *
-       01 WRK-PAGINA                PIC 9(03) VALUE 60.
+       01 WRK-LINHAS                PIC 9(03) VALUE 60.
       *
        01 WRK-PILHA-ERROS.
            05 WRK-IDX-PILHA        PIC 9(001) VALUE ZERO.
            05 WRK-TABELA-ERROS OCCURS 05 TIMES
                                    PIC X(17).
       *
-       01 LD2-ERROS.
-           88 LD2-ERRO-RZSOCIAL    PIC X(017) VALUE 'ERRO RZ SOCIAL'.
-           88 LD2-ERRO-CNPJ        PIC X(017) VALUE 'ERRO CNPJ'.
-           88 LD2-ERRO-VALOR       PIC X(017) VALUE 'ERRO VALOR'.
-           88 LD2-ERRO-DATA        PIC X(017) VALUE 'ERRO DATA'.
-           88 LD2-ERRO-CODCLI      PIC X(017) VALUE 'ERRO NUM. CLIENTE'.
-      *
-       01 WRK-FATAL-ERROR          PIC X(002) VALUE '00'.
-      *
-       
+       01 WRK-FATAL-ERROR          PIC X(002) VALUE '00'. 
       *
        PROCEDURE DIVISION.
       * 
-       0000-PRINCIPAL.
+       0000-PRINCIPAL                             SECTION.
            OPEN INPUT DADOSCLI
       * 
-           IF WS-FS-DADOSCLI NOT = '00'
-               
+           IF WRK-FS-DADOSCLI NOT EQUAL '00'
+               MOVE 'DADOSCLI'        TO SYS-NOME-ARQUIVO
+               MOVE 'OPEN'            TO SYS-OPERACAO-ARQ
+               MOVE WRK-FS-DADOSCLI   TO SYS-COD-ERRO
+
+               DISPLAY SYSOUT-ERRO-ARQUIVO
+               MOVE 12 TO RETURN-CODE
+               GOBACK
            END-IF
       *
            OPEN OUTPUT RLINCONS
       *
-           IF WS-FS-RLINCONS NOT = '00'
-               
+           IF WRK-FS-RLINCONS NOT EQUAL '00'
+               MOVE 'RLINCONS'        TO SYS-NOME-ARQUIVO
+               MOVE 'OPEN'            TO SYS-OPERACAO-ARQ
+               MOVE WRK-FS-RLINCONS   TO SYS-COD-ERRO
+
+               DISPLAY SYSOUT-ERRO-ARQUIVO
+               MOVE 12 TO RETURN-CODE
+               GOBACK
            END-IF.
       *      
            READ DADOSCLI INTO PRF-DADOSCLI
-              AT END MOVE 'S' TO WS-FIM-ARQUIVO
+              AT END MOVE 'S' TO WRK-FIM-ARQUIVO
            END-READ
-      * 
-           IF WS-FIM-ARQUIVO = 'S'
-               MOVE 4 TO RETURN-CODE
-           END-IF.
       *
+           
            ACCEPT WRK-DATA-PROCESSAMENTO FROM DATE YYYYMMDD.
            ACCEPT WRK-HORA-PROCESSAMENTO FROM TIME.
+           INITIALIZE SYSOUT-ERRO-ARQUIVO
+           INITIALIZE SYSOUT-SUCESSO
+           INITIALIZE SYSOUT-ERRO-SQL
       * 
-           PERFORM UNTIL WS-FIM-ARQUIVO = 'S'
+           IF WRK-FIM-ARQUIVO EQUAL 'S'
+               MOVE 4 TO RETURN-CODE
+               SET ARQ-VAZIO TO TRUE
+           END-IF.
+      * 
+           PERFORM UNTIL WRK-FIM-ARQUIVO EQUAL 'S' 
+              OR SYS-COD-SQL NOT EQUAL 0
       *        
               MOVE 'OPERACAO INVALIDA' TO LD1-RESULTADO
       *
-              ADD 1 TO WS-REG-LIDOS
+              ADD 1 TO WRK-REG-LIDOS
               PERFORM 1000-PROCESSAR-NOVO-CLIENTE
-      *         
+      *       
+              IF LD1-OPER EQUAL SPACES
+                   ADD 1 TO WRK-REG-DESP
+              END-IF
+
               READ DADOSCLI INTO PRF-DADOSCLI
-                AT END MOVE 'S' TO WS-FIM-ARQUIVO
+                AT END MOVE 'S' TO WRK-FIM-ARQUIVO
               END-READ
            END-PERFORM.
       *
+           IF WRK-FIM-ARQUIVO EQUAL 'S' 
+              OR SYS-COD-SQL EQUAL 0
+               DISPLAY SYSOUT-SUCESSO
+           END-IF
+
+           CLOSE DADOSCLI
+           CLOSE RLINCONS
            GOBACK.
        0000-FIM. EXIT.
       *     
        1000-PROCESSAR-NOVO-CLIENTE                         SECTION.
            IF NOVO-CLIENTE
-              EXIT SECTION
+              GO TO 1000-FIM
            END-IF
       * 
            MOVE PRF-OPERACAO TO LD1-OPER
            MOVE 'NOVO-CLIENTE' TO LD1-DESCOPER
       * 
-           IF PRF-CODIGOCLI = 0
+           IF PRF-CODIGOCLI EQUAL 0
               MOVE 'ERRO NUM. CLIENTE' 
                  TO WRK-TABELA-ERROS (WRK-IDX-PILHA + 1)
               ADD 1 TO WRK-IDX-PILHA
            END-IF
       * 
-           IF PRF-RAZAOSOCIAL = SPACES
+           IF PRF-RAZAOSOCIAL EQUAL SPACES
               MOVE 'ERRO RAZAO SOCIAL'
                  TO WRK-TABELA-ERROS (WRK-IDX-PILHA + 1)
               ADD 1 TO WRK-IDX-PILHA
@@ -154,13 +179,13 @@
            MOVE PRF-CONTROLE TO WRK-CONTROLE
            CALL WRK-PROG-CNPJ USING WRK-AREACNPJ
       *
-           IF WRK-CODRCNPJ NOT = 'OK'
+           IF WRK-CODRCNPJ NOT EQUAL 'OK'
               MOVE 'ERRO CNPJ'
                 TO WRK-TABELA-ERROS (WRK-IDX-PILHA + 1)
               ADD 1 TO WRK-IDX-PILHA
            END-IF
       *
-           IF PRF-VLRULTCOMPRA = 0
+           IF PRF-VLRULTCOMPRA EQUAL 0
               MOVE 'ERRO VALOR'
                  TO WRK-TABELA-ERROS (WRK-IDX-PILHA + 1)
               ADD 1 TO WRK-IDX-PILHA
@@ -169,7 +194,7 @@
            MOVE PRF-DATAOPER TO WRK-DATADEV
            CALL WRK-PROG-DAT USING WRK-DEVCDATA.
       *
-           IF WRK-CODRDEV NOT = 'OK' 
+           IF WRK-CODRDEV NOT EQUAL 'OK' 
               OR PRF-DATAOPER > WRK-DATA-PROCESSAMENTO
               MOVE 'ERRO DATA'
                 TO WRK-TABELA-ERROS (WRK-IDX-PILHA + 1)
@@ -177,7 +202,7 @@
            END-IF
       *
            IF WRK-IDX-PILHA > 0
-               EXIT SECTION 
+               GO TO 1000-FIM 
            END-IF
       *
            MOVE PRF-CODIGOCLI            TO CODIGO-CLI
@@ -189,24 +214,25 @@
       *
            EXEC SQL
               SELECT CODIGO_CLI INTO :CODIGO-CLI
-                 FROM ALUNOXX.CLIENTPJ
+                 FROM ALUNO08.CLIENTPJ
                  WHERE CODIGO_CLI = :CODIGO-CLI
            END-EXEC
       *
            MOVE 'OPERACAO REALIZADA' TO LD1-RESULTADO
       *
-           IF SQLCODE = +0
+           IF SQLCODE EQUAL +0
               MOVE 'ERRO NUM. CLIENTE' 
                  TO WRK-TABELA-ERROS (WRK-IDX-PILHA + 1)
               ADD 1 TO WRK-IDX-PILHA
-              EXIT SECTION
+              ADD 1 TO WRK-REG-DESP
+              GO TO 1000-FIM
            END-IF
       *
            IF PRF-CNPJ IS NUMERIC AND PRF-FILIAL IS NUMERIC 
               MOVE PRF-CNPJ                 TO NUMECNPJ-CLI
               MOVE PRF-FILIAL               TO FILIALCNPJ-CLI
               EXEC SQL
-                  INSERT INTO ALUNOXX.CLIENTPJ (
+                  INSERT INTO ALUNO08.CLIENTPJ (
                       CODIGO_CLI, RAZSOCIAL_CLI, 
                       NUMECNPJ_CLI, FILIALCNPJ_CLI, 
                       CTLCNPJ_CLI, VRULTCOMPRA_CLI, 
@@ -222,9 +248,9 @@
               MOVE PRF-CNPJ                 TO NUMECNPJA-CLI
               MOVE PRF-FILIAL               TO FILIALCNPJA-CLI
               EXEC SQL
-                  INSERT INTO ALUNOXX.CLIENTPJ (
+                  INSERT INTO ALUNO08.CLIENTPJ (
                       CODIGO_CLI, RAZSOCIAL_CLI, 
-                      NUMECNPJA-CLI, FILIALCNPJA-CLI, 
+                      NUMECNPJA_CLI, FILIALCNPJA_CLI, 
                       CTLCNPJ_CLI, VRULTCOMPRA_CLI, 
                       DTULTCOMPRA_CLI, DTATLZDADOS_CLI
                   ) VALUES (
@@ -236,8 +262,52 @@
               END-EXEC
            END-IF
       *
-           IF SQLCODE NOT = +100
-               MOVE 'SELECT' TO SYS-OPE-SQL              
-           END-IF.
-
+           IF SQLCODE NOT EQUAL +100
+               MOVE 'SELECT' TO SYS-OPE-SQL
+               GO TO 1000-FIM            
+           END-IF
+      *
+           PERFORM 4000-IMPRIMIR-RELATORIO.
        1000-FIM. EXIT.
+
+       4000-IMPRIMIR-RELATORIO.
+           MOVE PRF-CODIGOCLI TO LD3-NUMCLI
+           MOVE PRF-RAZAOSOCIAL TO LD3-RAZSOCIAL
+      *
+           IF WRK-LINHAS = 60 OR WRK-LINHAS = 0
+               ADD 1 TO CB1-PAG
+               MOVE WRK-DIA-PROC TO CB1-DATA(1:2)
+               MOVE '/' TO CB1-DATA(3:1)
+               MOVE WRK-MES-PROC TO CB1-DATA(4:2)
+               MOVE '/' TO CB1-DATA(6:1)
+               MOVE WRK-ANO-PROC TO CB1-DATA(7:4)
+      *
+               WRITE REG-RLINCONS FROM CABEC1
+           END-IF
+      *    
+           WRITE REG-RLINCONS FROM LINDET1
+
+           PERFORM UNTIL WRK-IDX-PILHA EQUAL ZERO
+               MOVE WRK-TABELA-ERROS (WRK-IDX-PILHA)
+                 TO LD2-RESULTADO
+      *
+               WRITE REG-RLINCONS FROM LINDET2
+               SUBTRACT 1 FROM WRK-IDX-PILHA
+           END-PERFORM
+      *
+           WRITE REG-RLINCONS FROM CABEC2
+      *
+           WRITE REG-RLINCONS FROM LINDET3
+      *
+           WRITE REG-RLINCONS FROM CABEC3          
+      *
+           MOVE PRF-CNPJ              TO LD4-CNPJ
+           MOVE PRF-FILIAL            TO LD4-FILIAL
+           MOVE PRF-CONTROLE          TO LD4-CONTROLE 
+      *
+           MOVE PRF-VLRULTCOMPRA      TO LD4-VRULTCOMPRA
+           MOVE PRF-DATAOPER          TO LD4-DATA.
+
+       4000-FIM. EXIT.
+
+            

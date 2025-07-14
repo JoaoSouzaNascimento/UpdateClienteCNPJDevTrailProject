@@ -10,7 +10,7 @@
                88 INATIVACAO                         VALUE 'I'.
             10 PRF-CODIGOCLI           PIC 9(005)    VALUE ZEROS.
             10 PRF-RAZAOSOCIAL         PIC X(040)    VALUE SPACE.
-            10 PRF-CNPJ                PIC X(009)    VALUE SPACE.
+            10 PRF-CNPJ                PIC X(008)    VALUE SPACE.
             10 PRF-FILIAL              PIC X(004)    VALUE SPACE.
             10 PRF-CONTROLE            PIC 9(002)    VALUE ZEROS.
             10 PRF-VLRULTCOMPRA COMP-3 PIC 9(011)V99 VALUE ZEROS.
