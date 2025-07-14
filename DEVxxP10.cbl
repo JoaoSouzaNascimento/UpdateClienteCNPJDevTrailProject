@@ -82,11 +82,15 @@
            05 WRK-TABELA-ERROS OCCURS 05 TIMES
                                    PIC X(17).
       *
-       01 WRK-FATAL-ERROR          PIC X(002) VALUE '00'. 
+       01 WRK-IND-NULL.
+           05 WRK-NULL-RAZSOCIAL   PIC S9(004) VALUE SPACES.
+           05 WRK-NULL-CNPJ        PIC S9(004) VALUE SPACES.
+           05 WRK-NULL-VLULTCOMPRA PIC S9(004) VALUE SPACES.
+           05 WRK-NULL-DATAOPER    PIC S9(004) VALUE SPACES.
       *
        PROCEDURE DIVISION.
       * 
-       0000-PRINCIPAL                             SECTION.
+       0000-PRINCIPAL                                      SECTION.
            OPEN INPUT DADOSCLI
       * 
            IF WRK-FS-DADOSCLI NOT EQUAL '00'
@@ -129,8 +133,9 @@
       * 
            PERFORM UNTIL WRK-FIM-ARQUIVO EQUAL 'S' 
               OR SYS-COD-SQL NOT EQUAL 0
-      *        
-              MOVE 'OPERACAO INVALIDA' TO LD1-RESULTADO
+              MOVE +0                  TO   WRK-IND-NULL
+      *
+              MOVE 'OPERACAO INVALIDA' TO   LD1-RESULTADO
       *
               ADD 1 TO WRK-REG-LIDOS
               PERFORM 1000-PROCESSAR-NOVO-CLIENTE
@@ -155,14 +160,14 @@
        0000-FIM. EXIT.
       *     
        1000-PROCESSAR-NOVO-CLIENTE                         SECTION.
-           IF NOVO-CLIENTE
+           IF NOT NOVO-CLIENTE
               GO TO 1000-FIM
            END-IF
       * 
            MOVE PRF-OPERACAO TO LD1-OPER
            MOVE 'NOVO-CLIENTE' TO LD1-DESCOPER
       * 
-           IF PRF-CODIGOCLI EQUAL 0
+           IF PRF-CODIGOCLI NOT NUMERIC OR PRF-CODIGOCLI EQUAL 0 
               MOVE 'ERRO NUM. CLIENTE' 
                  TO WRK-TABELA-ERROS (WRK-IDX-PILHA + 1)
               ADD 1 TO WRK-IDX-PILHA
@@ -185,7 +190,7 @@
               ADD 1 TO WRK-IDX-PILHA
            END-IF
       *
-           IF PRF-VLRULTCOMPRA EQUAL 0
+           IF PRF-VLRULTCOMPRA NOT NUMERIC OR PRF-CODIGOCLI EQUAL 0 
               MOVE 'ERRO VALOR'
                  TO WRK-TABELA-ERROS (WRK-IDX-PILHA + 1)
               ADD 1 TO WRK-IDX-PILHA
@@ -202,6 +207,7 @@
            END-IF
       *
            IF WRK-IDX-PILHA > 0
+              MOVE 'REG INCONSISTENTE' TO LD1-RESULTADO
                GO TO 1000-FIM 
            END-IF
       *
@@ -268,9 +274,104 @@
            END-IF
       *
            PERFORM 4000-IMPRIMIR-RELATORIO.
-       1000-FIM. EXIT.
+       1000-FIM. EXIT.   
+      *
+       2000-PROCESSAR-ALTERACAO                            SECTION.
+           IF NOT ALTERACAO
+               GO TO 2000-FIM
+           END-IF
+      *
+           MOVE PRF-OPERACAO TO LD1-OPER
+           MOVE 'ALTERACAO' TO LD1-DESCOPER
 
-       4000-IMPRIMIR-RELATORIO.
+           IF PRF-CODIGOCLI NOT NUMERIC OR PRF-CODIGOCLI = 0
+               MOVE 'ERRO NUM. CLIENTE'
+                   TO WRK-TABELA-ERROS (WRK-IDX-PILHA + 1)
+               ADD 1 TO WRK-IDX-PILHA
+               ADD 1 TO WRK-REG-DESP
+               GO TO 2000-IMPRIMIR-ERRO
+           END-IF
+      *
+           IF PRF-CNPJ NOT = SPACES
+               MOVE PRF-CNPJ TO WRK-CNPJ
+               MOVE PRF-FILIAL TO WRK-FILIAL
+               MOVE PRF-CONTROLE TO WRK-CONTROLE
+               CALL WRK-PROG-CNPJ USING WRK-AREACNPJ
+               IF WRK-CODRCNPJ NOT = 'OK'
+                   MOVE 'ERRO CNPJ'
+                       TO WRK-TABELA-ERROS (WRK-IDX-PILHA + 1)
+                   ADD 1 TO WRK-IDX-PILHA
+               END-IF
+           ELSE
+               MOVE -1 TO WRK-NULL-CNPJ
+           END-IF
+      *
+           IF PRF-VLRULTCOMPRA NOT EQUAL SPACES
+               IF PRF-VLRULTCOMPRA NOT NUMERIC OR PRF-VLRULTCOMPRA = 0
+                   MOVE 'ERRO VALOR'
+                       TO WRK-TABELA-ERROS (WRK-IDX-PILHA + 1)
+                   ADD 1 TO WRK-IDX-PILHA
+               END-IF
+           ELSE
+               MOVE -1 TO WRK-NULL-VLULTCOMPRA
+           END-IF
+      *
+           IF PRF-DATAOPER NOT = SPACES
+               MOVE PRF-DATAOPER TO WRK-DATADEV
+               CALL WRK-PROG-DAT USING WRK-DEVCDATA
+               IF WRK-CODRDEV NOT = 'OK'
+                   OR PRF-DATAOPER > WRK-DATA-PROCESSAMENTO
+                   MOVE 'ERRO DATA'
+                       TO WRK-TABELA-ERROS (WRK-IDX-PILHA + 1)
+                   ADD 1 TO WRK-IDX-PILHA
+               END-IF
+           ELSE
+               MOVE -1 TO WRK-NULL-DATAOPER
+           END-IF
+
+           IF WRK-IDX-PILHA > 0
+               GO TO 2000-IMPRIMIR-ERRO
+           END-IF
+     *
+           EXEC SQL
+               SELECT CODIGO_CLI INTO :CODIGO-CLI
+                  FROM ALUNO08.CLIENTPJ
+                  WHERE CODIGO_CLI = :CODIGO-CLI
+            END-EXEC
+     *
+           
+      *
+           IF SQLCODE NOT = 0 OR SITUACAO-CLI = 'I'
+               MOVE 'ERRO NUM CLIENTE' TO LD1-RESULTADO
+               MOVE 'ERRO NUM. CLIENTE'
+                   TO WRK-TABELA-ERROS (WRK-IDX-PILHA + 1)
+               ADD 1 TO WRK-IDX-PILHA
+               ADD 1 TO WRK-REG-DESP
+               GO TO 2000-IMPRIMIR-ERRO
+           END-IF
+      *
+           EXEC SQL
+               UPDATE ALUNO08.CLIENTPJ
+                  SET
+                      RAZSOCIAL_CLI = 
+                      COALESCE(:RAZSOCIAL-CLI, RAZSOCIAL_CLI),
+                      CTLCNPJ_CLI = 
+                      COALESCE(:CTLCNPJ-CLI, CTLCNPJ_CLI),
+                      VRULTCOMPRA_CLI = 
+                      COALESCE(:VRULTCOMPRA-CLI, VRULTCOMPRA_CLI),
+                      DTULTCOMPRA_CLI = 
+                      COALESCE(:DTULTCOMPRA-CLI, DTULTCOMPRA_CLI),
+                      DTATLZDADOS_CLI = 
+                      :DTATLZDADOS-CLI
+                 WHERE CODIGO_CLI = :CODIGO-CLI
+           END-EXEC
+      *
+           MOVE 'OPERACAO REALIZADA' TO LD1-RESULTADO
+           PERFORM 4000-IMPRIMIR-RELATORIO
+
+       2000-FIM. EXIT.
+      *
+       4000-IMPRIMIR-RELATORIO                             SECTION.
            MOVE PRF-CODIGOCLI TO LD3-NUMCLI
            MOVE PRF-RAZAOSOCIAL TO LD3-RAZSOCIAL
       *
