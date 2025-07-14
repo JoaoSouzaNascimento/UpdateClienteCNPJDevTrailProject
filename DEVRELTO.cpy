@@ -43,3 +43,23 @@
            10 LD3-RAZSOCIAL            PIC  X(040) VALUE SPACES.
            10 FILLER                   PIC  X(025) VALUE SPACES.
       *
+       01  CABEC3.
+           10 FILLER                   PIC  X(005) VALUE SPACES.
+           10 CB3-CNPJ                 PIC  X(015) VALUE
+           'CNPJ/FILIAL-CTL'.
+           10 FILLER                   PIC  X(007) VALUE SPACES.
+           10 CB3-VALOR                PIC  X(016) VALUE
+           'VLR. ULT. COMPRA'.
+           10 FILLER                   PIC  X(004) VALUE SPACES.
+           10 CB3-DATA                 PIC  X(016) VALUE
+           'DATA COMPRA/INAT'.
+      *
+       01  LINDET4.
+           10 FILLER                   PIC  X(005) VALUE SPACES.
+           10 LD4-CNPJ                 PIC  X(016) VALUE SPACES.
+           10 FILLER                   PIC  X(004) VALUE SPACES.
+           10 LD4-VRULTCOMPRA          PIC  ZZ.ZZZ.ZZZ.ZZ9,99 VALUE 
+              ZEROS.
+           10 FILLER                   PIC  X(007) VALUE SPACES.
+           10 LD4-DATA                 PIC  99/99/9999 VALUE ZEROS.
+      *
